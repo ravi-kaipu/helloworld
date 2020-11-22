@@ -1,0 +1,31 @@
+variables:
+  DOCKER_DRIVER: "overlay2"
+
+services:
+  - docker:dind
+
+stages:
+  - prepare
+  - build
+  - test
+
+docker-build:
+  image: docker:latest
+  stage: prepare
+  before_script:
+    - echo $CI_BUILD_TOKEN | docker login -u "$CI_REGISTRY_USER" --password-stdin  $CI_REGISTRY
+  script:
+    - docker build --cache-from $CI_REGISTRY_IMAGE:latest  -t $CI_REGISTRY_IMAGE:latest .
+    - docker push $CI_REGISTRY_IMAGE:latest
+
+app_build:
+  image: $CI_REGISTRY_IMAGE:latest
+  stage: build
+  script:
+    - ls && pwd
+
+test_app:
+  image: $CI_REGISTRY_IMAGE:latest
+  stage: test
+  script:
+    - conan get libhello
